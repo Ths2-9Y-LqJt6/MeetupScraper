@@ -15,7 +15,7 @@ Here we pass in `synshop` into the `get_future_meetup_events()` method to get th
 <?php
 require_once('MeetupEvents.php');
 $meetup = new MeetupEvents();
-$events = $meetup->get_future_meetup_events('synshop');
+$events = $meetup->get_future_events('synshop');
 $count = 1;
 foreach ( $events as $event){
         print "<div class='date'>{$event['human_date']}</div>";

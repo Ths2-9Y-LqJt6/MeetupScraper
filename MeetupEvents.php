@@ -14,7 +14,8 @@ class MeetupEvents {
     var $cachePath;
     var $cacheAge;
     var $meetupBase;
-    var $eventsUri;
+    var $futureUri;
+    var $pastUri;
 
     /**
      * MeetupEvents constructor.
@@ -34,7 +35,8 @@ class MeetupEvents {
         }
 
         $this->meetupBase = 'https://www.meetup.com'; // no traling slash
-        $this->eventsUri = '/events/'; // leading and trailing slash
+        $this->futureUri = '/events/'; // leading and trailing slash
+        $this->pastUri = '/events/past'; // leading and trailing slash
     }
 
     /**
@@ -74,19 +76,38 @@ class MeetupEvents {
 
     /**
      * Likely a very fragile method to get future events in a multi-dimensional array. uses getAndCacheUrl()
+     * @param string $group meetup group name from URL
+     * @return array $events with each member being an array with keys of link, title, epoch, human_date and description
+     */
+    function get_future_events($group)
+    {
+        $url = $this->meetupBase . '/' . $group . $this->futureUri;
+        $html = $this->getAndCacheUrl($url, $this->cacheAge, $this->cachePath);
+        return $this->parseHtmlToArray($html);
+    }
+    /**
+     * Likely a very fragile method to get future events in a multi-dimensional array. uses getAndCacheUrl()
      * @param $group
      * @return array $events with each member being an array with keys of link, title, epoch, human_date and description
      */
-    function get_future_meetup_events($group)
+    function get_past_events($group)
     {
-        $url = $this->meetupBase . '/' . $group . $this->eventsUri;
+        $url = $this->meetupBase . '/' . $group . $this->pastUri;
+        $html = $this->getAndCacheUrl($url, $this->cacheAge, $this->cachePath);
+        return $this->parseHtmlToArray($html);
+    }
 
-        $blogHtml = $this->getAndCacheUrl($url, $this->cacheAge, $this->cachePath);
-
+    /**
+     * Likely a very fragile method to get past events in a multi-dimensional array. uses getAndCacheUrl()
+     * @param string $group meetup group name from URL
+     * @return array $events with each member being an array with keys of link, title, epoch, human_date and description
+     */
+    function parseHtmlToArray($html)
+    {
         $events = array();
         $dom = new DOMDocument;
         libxml_use_internal_errors(true);
-        $dom->loadHTML($blogHtml);
+        $dom->loadHTML($html);
         libxml_clear_errors();
 
         $finder = new DomXPath($dom);
@@ -96,11 +117,11 @@ class MeetupEvents {
         foreach ($nodes as $node) {
             $event = array();
             foreach ($node->getElementsByTagName('a') as $link) {
-                if ($link->getAttribute('class') == 'eventCardHead--title') {
-                    $event['link'] = $this->meetupBase . $link->getAttribute('href');
-                    $event['title'] = $link->nodeValue;
-                    break;
-                }
+            if ($link->getAttribute('class') == 'eventCardHead--title') {
+            $event['link'] = $this->meetupBase . $link->getAttribute('href');
+            $event['title'] = $link->nodeValue;
+            break;
+            }
             }
             foreach ($node->getElementsByTagName('time') as $link) {
                 if ($link->getAttribute('datetime')) {
@@ -122,5 +143,6 @@ class MeetupEvents {
         }
         ksort($events);
         return $events;
+
     }
 }
